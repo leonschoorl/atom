@@ -12,6 +12,12 @@ pathFromGitFile = (gitFile) ->
     gitFileBuff = fs.readFileSync(gitFile, 'utf8')
     return gitFileBuff?.match(gitFileRegex)[1]
 
+commonDirFileRegex = RegExp "^(.+)"
+pathFromCommonDirFile = (commonDirFile) ->
+  try
+    commonDirBuff = fs.readFileSync(commonDirFile, 'utf8')
+    return commonDirBuff?.match(commonDirFileRegex)[1]
+
 # Checks whether a valid `.git` directory is contained within the given
 # directory or one of its ancestors. If so, a Directory that corresponds to the
 # `.git` folder will be returned. Otherwise, returns `null`.
@@ -40,6 +46,12 @@ isValidGitDirectorySync = (directory) ->
   # To decide whether a directory has a valid .git folder, we use
   # the heuristic adopted by the valid_repository_path() function defined in
   # node_modules/git-utils/deps/libgit2/src/repository.c.
+  commonDirFile = directory.getFile('commondir')
+  if commonDirFile.existsSync()
+    commonDirPath = pathFromCommonDirFile(commonDirFile.getPath())
+    commonDir = new Directory(directory.resolve(commonDirPath))
+    if commonDir.existsSync()
+      directory = commonDir
   return directory.getSubdirectory('objects').existsSync() and
       directory.getFile('HEAD').existsSync() and
       directory.getSubdirectory('refs').existsSync()
